@@ -9,7 +9,7 @@
 [submodule "sources/meta-openembedded"]
 	path = sources/meta-openembedded
 	url = git://github.com/kraj/meta-openembedded.git
-	branch = master
+	branch = kraj/master
 [submodule "sources/meta-bec"]
 	path = sources/meta-bec
 	url = git://github.com/cbrake/meta-bec.git
