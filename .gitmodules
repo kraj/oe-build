@@ -42,3 +42,6 @@
 	path = sources/meta-96boards
 	url = git://github.com/96boards/meta-96boards
 	branch = sumo
+[submodule "sources/meta-hy"]
+	path = sources/meta-hy
+	url = git://github.com/himvis/meta-hy
