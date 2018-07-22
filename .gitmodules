@@ -14,10 +14,6 @@
 	path = sources/meta-bec
 	url = git://github.com/cbrake/meta-bec.git
 	branch = master
-[submodule "sources/meta-browser"]
-	path = sources/meta-browser
-	url = git://github.com/OSSystems/meta-browser.git
-	branch = sumo
 [submodule "sources/meta-freescale"]
 	path = sources/meta-freescale
 	url = git://git.yoctoproject.org/meta-freescale
@@ -25,10 +21,6 @@
 [submodule "sources/meta-freescale-3rdparty"]
 	path = sources/meta-freescale-3rdparty
 	url = git://github.com/Freescale/meta-freescale-3rdparty.git
-	branch = sumo
-[submodule "sources/meta-qt5"]
-	path = sources/meta-qt5
-	url = https://github.com/meta-qt5/meta-qt5.git
 	branch = sumo
 [submodule "sources/meta-freescale-distro"]
 	path = sources/meta-freescale-distro
@@ -45,3 +37,4 @@
 [submodule "sources/meta-hy"]
 	path = sources/meta-hy
 	url = git://github.com/himvis/meta-hy
+	branch = master
