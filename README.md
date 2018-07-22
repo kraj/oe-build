@@ -13,14 +13,11 @@ scratch on the BeagleBoard.
 * cd oe-build
 * . envsetup.sh
 * oe_setup
-* bitbake systemd-image
+* bitbake core-image-iot
 * [insert SD card]
 * lsblk (note sd card device)
-* oe\_partition\_sd /dev/sdX
-* oe\_install\_sd\_boot (install MLO, u-boot, kernel)
-* oe\_install\_sd\_rootfs\_systemd\_image
-* [Install SD card in beagleboard and enjoy your new image]
-* oe\_console (fire up a serial console for the machine)
+* dd if=<core-image-iot> of=/dev/sdX bs=4M
+* [Install SD card in RPI3 and enjoy your new image]
 
 Motivation
 ----------
@@ -136,6 +133,6 @@ License
 This build system is licensed under the MIT license which is the
 same license as oe-core, etc.  See COPYING.MIT
 
-Contributions are welcome: please email cbrake@bec-systems.com
+Contributions are welcome: please email cbrake@bec-systems.com or raj.khem@gmail.com
 
 
