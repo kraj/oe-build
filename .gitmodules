@@ -12,7 +12,7 @@
 	branch = kraj/master
 [submodule "sources/meta-bec"]
 	path = sources/meta-bec
-	url = git://github.com/cbrake/meta-bec.git
+	url = git://github.com/kraj/meta-bec.git
 	branch = master
 [submodule "sources/meta-ti"]
 	path = sources/meta-ti
@@ -20,8 +20,8 @@
 	branch = master
 [submodule "sources/meta-browser"]
 	path = sources/meta-browser
-	url = git://github.com/OSSystems/meta-browser.git
-	branch = master
+	url = git://github.com/kraj/meta-browser.git
+	branch = kraj/master
 [submodule "sources/meta-freescale"]
 	path = sources/meta-freescale
 	url = git://git.yoctoproject.org/meta-freescale
@@ -32,8 +32,8 @@
 	branch = master
 [submodule "sources/meta-qt5"]
 	path = sources/meta-qt5
-	url = https://github.com/meta-qt5/meta-qt5.git
-	branch = master
+	url = https://github.com/kraj/meta-qt5.git
+	branch = kraj/master
 [submodule "sources/meta-intel"]
 	path = sources/meta-intel
 	url = git://git.yoctoproject.org/meta-intel
