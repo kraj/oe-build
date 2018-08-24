@@ -36,36 +36,6 @@ if [ -z "${MACHINE}" ]; then
   return
 fi
 
-case $MACHINE in
-beagleboard | beaglebone | overo | wandboard-dual)
-  export MACHINE_ARCH=armv7at2hf-vfp-neon
-  export MACHINE_SUBARCH=armv7ahf-vfp-neon
-  ;;
-imx6ul-var-dart)
-  export MACHINE_ARCH=cortexa7t2hf-neon
-  export MACHINE_SUBARCH=cortexa7t2hf-neon-mx6ul
-  ;;
-raspberrypi3 | raspberrypi2)
-  export MACHINE_ARCH=armv7vet2hf-neon-vfpv4
-  export MACHINE_SUBARCH=armv7vet2hf-neon-vfpv4
-  ;;
-dragonboard-410c | raspberrypi3-64 | odroid-c2)
-  export MACHINE_ARCH=aarch64
-  export MACHINE_SUBARCH=aarch64
-  ;;
-intel-corei7-64)
-  export MACHINE_ARCH=x86_64
-  export MACHINE_SUBARCH=intel_corei7_64
-  ;;
-qemuriscv64)
-  export MACHINE_ARCH=riscv64
-  export MACHINE_SUBARCH=riscv64
-  ;;
-*)
-  echo "Note: Don't know how to set MACHINE_ARCH and MACHINE_SUBARCH feed server setup function will not work correctly"
-  ;;
-esac
-
 if [ -z "${MEDIA}" ]; then
   # set the location of the automounted location for removable storage
   # newer gnome systems
@@ -276,217 +246,27 @@ _EOF
   fi
 }
 
-function oe_partition_sd_3() {
-  # create 3 partitions for TI OMAP type CPUs
-  # taken from a standalone script
-  # (c) 2009 Graeme Gregory
-  # This script is GPLv3 licensed!
-
-  if [ ! $1 ]; then
-    echo "Usage: oe_partition_sd /dev/sdX"
-    echo "Warning, make sure you specify your SD card and not a workstation disk"
-    echo
-    return 1
-  fi
-
-  DRIVE=$1
-
-  sudo umount ${DRIVE}1 2>/dev/null
-  sudo umount ${DRIVE}2 2>/dev/null
-  sudo umount ${DRIVE}3 2>/dev/null
-
-  sudo dd if=/dev/zero of=$DRIVE bs=1024 count=1024
-
-  SIZE=$(sudo fdisk -l $DRIVE | grep Disk | awk '{print $5}')
-
-  echo DISK SIZE - $SIZE bytes
-
-  CYLINDERS=$(echo $SIZE/255/63/512 | bc)
-  CYLINDER_SIZE=$(echo $SIZE/$CYLINDERS | bc)
-  CYLINDERS_ROOTFS=$(echo 700*1024*1024/$CYLINDER_SIZE | bc)
-
-  echo CYLINDERS - $CYLINDERS
-  echo CYLINDERS in rootfs - $CYLINDERS_ROOTFS
-
-  {
-    echo ,9,0x0C,*
-    echo ,$CYLINDERS_ROOTFS,0x83,-
-    echo ,,0x83,-
-  } | sudo sfdisk -D -H 255 -S 63 -C $CYLINDERS $DRIVE
-
-  sudo umount ${DRIVE}1 2>/dev/null
-  # If you get the message WARNING: Not enough clusters for a 32 bit FAT!, reduce cluster -s2, or -s1
-  sudo mkfs.vfat -F32 -s2 -n "boot" ${DRIVE}1
-
-  sudo umount ${DRIVE}2 2>/dev/null
-  sudo mke2fs -j -L "rootfs" ${DRIVE}2
-
-  sudo umount ${DRIVE}3 2>/dev/null
-  sudo mke2fs -j -L "omap-data" ${DRIVE}3
-}
-
-function oe_partition_sd() {
-  # create 2 partitions for TI OMAP type CPUs
-  # taken from a standalone script
-  # (c) 2009 Graeme Gregory
-  # This script is GPLv3 licensed!
-
-  if [ ! $1 ]; then
-    echo "Usage: oe_partition_sd /dev/sdX"
-    echo "Warning, make sure you specify your SD card and not a workstation disk"
-    echo
-    return 1
-  fi
-
-  DRIVE=$1
-
-  sudo umount ${DRIVE}1 2>/dev/null
-  sudo umount ${DRIVE}2 2>/dev/null
-
-  sudo dd if=/dev/zero of=$DRIVE bs=1024 count=1024
-
-  SIZE=$(sudo fdisk -l $DRIVE | grep Disk | awk '{print $5}')
-
-  echo DISK SIZE - $SIZE bytes
-
-  CYLINDERS=$(echo $SIZE/255/63/512 | bc)
-  CYLINDER_SIZE=$(echo $SIZE/$CYLINDERS | bc)
-  CYLINDERS_ROOTFS=$(echo 512*1024*1024/$CYLINDER_SIZE | bc)
-
-  echo CYLINDERS - $CYLINDERS
-  echo CYLINDERS in rootfs - $CYLINDERS_ROOTFS
-
-  {
-    echo ,9,0x0C,*
-    echo ,,0x83,-
-  } | sudo sfdisk -D -H 255 -S 63 -C $CYLINDERS $DRIVE
-
-  sudo umount ${DRIVE}1 2>/dev/null
-  # If you get the message WARNING: Not enough clusters for a 32 bit FAT!, reduce cluster -s2, or -s1
-  sudo mkfs.vfat -F32 -s2 -n "omap-boot" ${DRIVE}1
-
-  sudo umount ${DRIVE}2 2>/dev/null
-  sudo mke2fs -j -L "rootfs" ${DRIVE}2
-}
-
-function oe_partition_sd_imx6() {
-  echo "TODO"
-}
-
-function oe_install_sd_rootfs() {
-  IMAGE_NAME=$1
-
-  if [ -z $IMAGE_NAME ]; then
-    echo "Usage: oe_install_sd_rootfs <image name>"
-    echo "Example: oe_install_sd_rootfs systemd-image"
-    return
-  fi
-
-  rf_names="rootfs root ROOT ROOTFS"
-
-  for r in $rf_names; do
-    if [ -e $MEDIA/$r ]; then
-      ROOTFS=$MEDIA/$r
-      break
-    fi
-  done
-
-  echo "ROOTFS: $ROOTFS"
-
-  echo "Installing rootfs files for $IMAGE_NAME ..."
-  if [ ! -e $ROOTFS ]; then
-    echo "rootfs not found, please insert or partition SD card"
-    return 1
-  fi
-
-  sudo rm -rf $ROOTFS/*
-  cd $ROOTFS/
-  sudo tar -xzvf ${OE_DEPLOY_DIR}/$IMAGE_NAME-$MACHINE.tar.gz
-  cd -
-}
-
-function oe_install_sd_boot() {
-  if [ -e /$MEDIA/OMAP-BOOT ]; then
-    OMAPBOOT="OMAP-BOOT"
-  else
-    OMAPBOOT="omap-boot"
-  fi
-
-  cp ${OE_DEPLOY_DIR}/MLO /$MEDIA/$OMAPBOOT/MLO
-  cp ${OE_DEPLOY_DIR}/u-boot.img /$MEDIA/$OMAPBOOT/
-  cp ${OE_DEPLOY_DIR}/uImage-$MACHINE.* /$MEDIA/$OMAPBOOT/uImage
-}
-
-# Minnowboard max functions
-function oe_partition_sd_mbm() {
-  if [ ! $1 ]; then
-    echo "Usage: oe_partition_sd /dev/sdX"
-    echo "Warning, make sure you specify your SD card and not a workstation disk"
-    echo
-    return 1
-  fi
-
-  DEVICE=$1
-
-  sudo echo "starting ..." || return 1
-  sudo umount ${DEVICE}1 2>/dev/null
-  sudo umount ${DEVICE}2 2>/dev/null
-  sudo umount ${DEVICE}3 2>/dev/null
-
-  DEVICE_SIZE=$(sudo parted -s $DEVICE unit mb print | grep ^Disk | cut -d" " -f 3 | sed -e "s/MB//")
-  if [ "$DEVICE_SIZE" = "" ]; then
-    parted -s $DEVICE mklabel msdos || return 1
-    DEVICE_SIZE=$(sudo parted -s $DEVICE unit mb print | grep ^Disk | cut -d" " -f 3 | sed -e "s/MB//")
-  fi
-
-  BOOT_SIZE=100
-  ROOTFS_SIZE=700
-
-  ROOTFS_SIZE=$((DEVICE_SIZE - BOOT_SIZE))
-  ROOTFS_START=$((BOOT_SIZE))
-  ROOTFS_END=$((ROOTFS_START + ROOTFS_SIZE))
-
-  echo "DEVICE_SIZE: $DEVICE_SIZE"
-  echo "ROOTFS_SIZE: $ROOTFS_SIZE"
-  echo "ROOTFS_START: $ROOTFS_START"
-  echo "ROOTFS_END: $ROOTFS_END"
-
-  return
-
-  sudo dd if=/dev/zero of=$DEVICE bs=512 count=2 || return 1
-  sudo parted -s $DEVICE mklabel msdos || return 1
-  sudo parted -s $DEVICE mkpart primary 0% $BOOT_SIZE || return 1
-  sudo parted -s $DEVICE set 1 boot on || return 1
-  sudo parted -s $DEVICE mkpart primary $ROOTFS_START $ROOTFS_END || return 1
-  sudo mkfs.vfat -I ${DEVICE}1 -n "EFI" || return 1
-  sudo mkfs.ext3 -F ${DEVICE}2 -L "ROOT" || return 1
-
-  echo "all done :-)"
-}
-
-function oe_install_sd_boot_mbm() {
-  cp ${OE_DEPLOY_DIR}/bzImage /$MEDIA/EFI/vmlinuz.efi
-  echo "vmlinuz.efi root=/dev/mmcblk0p2 ro rootwait quiet console=ttyS0,115200 console=tty0" >/$MEDIA/EFI/startup.nsh
-}
-
 function oe_feed_server() {
   SAVEDPWD=$PWD
   cd $OE_BASE
   bitbake package-index
   cd build/tmp/deploy/ipk
-  python3 -m http.server 4000
+  python3 -m http.server 8000
   cd $SAVEDPWD
 }
 
 function oe_setup_feed_server() {
-  # set MACHINE_IP in local.sh
-  HOST_IP=$(hostname -i | tr -d ' ')
-  CANONICAL_MACHINE=$(echo "$MACHINE" | tr - _)
-  ssh root@$MACHINE_IP "rm /etc/opkg/*feed*"
-  ssh root@$MACHINE_IP "echo 'src/gz all http://$HOST_IP:4000/all' > /etc/opkg/base-feed.conf"
-  ssh root@$MACHINE_IP "echo 'src/gz $MACHINE_ARCH http://$HOST_IP:4000/$MACHINE_ARCH' >> /etc/opkg/base-feed.conf"
-  ssh root@$MACHINE_IP "echo 'src/gz $MACHINE_SUBARCH http://$HOST_IP:4000/$MACHINE_SUBARCH' >> /etc/opkg/base-feed.conf"
-  ssh root@$MACHINE_IP "echo 'src/gz $CANONICAL_MACHINE http://$HOST_IP:4000/$CANONICAL_MACHINE' >> /etc/opkg/base-feed.conf"
+  # set TARGET_IP in local.sh
+  # set HOST_IP in local.sh if different
+  if [ -n "${HOST_IP}" ]; then
+    HOST_IP=$(hostname -i | cut -d' ' -f 1)
+  fi
+  ssh root@$MACHINE_IP ls /etc/opkg/base-feeds.conf > /dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo "opkg is not installed, can't setup feeds on  machine $MACHINE_IP"
+  else
+    ssh root@$MACHINE_IP "sed -i -e 's|http://.*\/|http://$HOST_IP:8000/|' /etc/opkg/base-feeds.conf"
+  fi
 }
 
 function oe_search_file() {
